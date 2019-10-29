@@ -81,7 +81,7 @@ impl<T: WorkerComponent + TypeConversion + Debug> SpatialComponent<T> {
 
     // TODO - this is really bad as it seriliases then deserialises.
     fn to_update(&self) -> T::Update {
-        let schema_update = SchemaComponentUpdate::new(T::ID);
+        let schema_update = SchemaComponentUpdate::new();
         let mut fields = schema_update.fields();
         T::to_type(&self.value, &mut fields).unwrap();
 

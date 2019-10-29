@@ -5,7 +5,7 @@ authors = ["Sam Snyder <samsnyder96@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-spatialos-sdk = { path = "./spatialos-sdk-rs/spatialos-sdk" }
+spatialos-sdk = { git = "http://github.com/johnpmayer/spatialos-sdk-rs.git", branch = "feature/specs-integration" }
 specs = "0.14.3"
 hibitset = { version = "0.5.3", default-features = false }
 lazy_static = "1.3.0"

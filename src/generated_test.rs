@@ -79,11 +79,11 @@ impl Component for Position {
         unimplemented!()
     }
 
-    fn from_request(request: &SchemaCommandRequest) -> Result<PositionCommandRequest, String> {
+    fn from_request(command_index: CommandIndex, request: &SchemaCommandRequest) -> Result<PositionCommandRequest, String> {
         unimplemented!()
     }
 
-    fn from_response(response: &SchemaCommandResponse) -> Result<PositionCommandResponse, String> {
+    fn from_response(command_index: CommandIndex, response: &SchemaCommandResponse) -> Result<PositionCommandResponse, String> {
         unimplemented!()
     }
 

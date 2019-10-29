@@ -7,7 +7,7 @@ authors = [
 edition = "2018"
 
 [dependencies]
-spatialos-sdk = { path = "../spatialos-sdk-rs/spatialos-sdk"}
+spatialos-sdk = { git = "http://github.com/johnpmayer/spatialos-sdk-rs.git", branch = "feature/specs-integration" }
 futures = "0.1.25"
 uuid = { version = "0.7", features = ["v4"] }
 structopt = "0.2.14"
