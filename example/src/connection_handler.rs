@@ -1,10 +1,9 @@
 use crate::{Command, Opt};
 use futures::{Async, Future};
 use spatialos_sdk::worker::{
-    alpha::{self, LoginTokensRequest, PlayerIdentityCredentials, PlayerIdentityTokenRequest},
     connection::{WorkerConnection, WorkerConnectionFuture},
     constants::{LOCATOR_HOSTNAME, LOCATOR_PORT, RECEPTIONIST_PORT},
-    locator::{Locator, LocatorCredentials, LocatorParameters},
+    locator::{PlayerIdentityTokenRequest, Locator, PlayerIdentityCredentials, LocatorParameters, LoginTokensRequest},
     parameters::ConnectionParameters,
 };
 use uuid::Uuid;
@@ -40,27 +39,30 @@ pub fn get_connection(opt: Opt) -> Result<WorkerConnection, String> {
         }
 
         Command::Locator {
-            token,
-            project_name,
+            player_identity_token,
+            login_token,
         } => {
-            let params =
-                LocatorParameters::new(project_name, LocatorCredentials::login_token(token));
-            let locator = Locator::new(LOCATOR_HOSTNAME, &params);
-            let deployment = get_deployment(&locator)?;
+            let locator = Locator::new(
+                LOCATOR_HOSTNAME,
+                LOCATOR_PORT,
+                &LocatorParameters::new(PlayerIdentityCredentials::new(
+                    player_identity_token,
+                    login_token,
+                )),
+            );
             WorkerConnection::connect_locator_async(
                 &locator,
-                &deployment,
                 &ConnectionParameters::new(worker_type)
                     .using_tcp()
                     .using_external_ip(true)
                     .enable_internal_serialization(),
-                queue_status_callback,
             )
         }
+
         Command::DevelopmentAuthentication { dev_auth_token } => {
             let mut request = PlayerIdentityTokenRequest::new(dev_auth_token, "player-id")
                 .with_display_name("My Player");
-            let future = alpha::Locator::create_development_player_identity_token(
+            let future = Locator::create_development_player_identity_token(
                 LOCATOR_HOSTNAME,
                 LOCATOR_PORT,
                 &mut request,
@@ -69,7 +71,7 @@ pub fn get_connection(opt: Opt) -> Result<WorkerConnection, String> {
             let pit = future.wait()?;
             let mut request =
                 LoginTokensRequest::new(pit.player_identity_token.as_str(), worker_type.as_str());
-            let future = alpha::Locator::create_development_login_tokens(
+            let future = Locator::create_development_login_tokens(
                 LOCATOR_HOSTNAME,
                 LOCATOR_PORT,
                 &mut request,
@@ -86,13 +88,13 @@ pub fn get_connection(opt: Opt) -> Result<WorkerConnection, String> {
                 pit.player_identity_token.as_str(),
                 token.login_token.as_str(),
             );
-            let alpha_locator = alpha::Locator::new(
+            let alpha_locator = Locator::new(
                 LOCATOR_HOSTNAME,
                 LOCATOR_PORT,
-                &alpha::LocatorParameters::new(credentials),
+                &LocatorParameters::new(credentials),
             );
 
-            WorkerConnection::connect_alpha_locator_async(
+            WorkerConnection::connect_locator_async(
                 &alpha_locator,
                 &ConnectionParameters::new(worker_type)
                     .using_tcp()
@@ -109,20 +111,20 @@ pub fn get_connection(opt: Opt) -> Result<WorkerConnection, String> {
     }
 }
 
-fn queue_status_callback(_queue_status: &Result<u32, String>) -> bool {
-    true
-}
+// fn queue_status_callback(_queue_status: &Result<u32, String>) -> bool {
+//     true
+// }
 
-fn get_deployment(locator: &Locator) -> Result<String, String> {
-    let deployment_list_future = locator.get_deployment_list_async();
-    let deployment_list = deployment_list_future.wait()?;
+// fn get_deployment(locator: &Locator) -> Result<String, String> {
+//     let deployment_list_future = locator.get_deployment_list_async();
+//     let deployment_list = deployment_list_future.wait()?;
 
-    if deployment_list.is_empty() {
-        return Err("No deployments could be found!".to_owned());
-    }
+//     if deployment_list.is_empty() {
+//         return Err("No deployments could be found!".to_owned());
+//     }
 
-    Ok(deployment_list[0].deployment_name.clone())
-}
+//     Ok(deployment_list[0].deployment_name.clone())
+// }
 
 fn get_connection_poll(future: &mut WorkerConnectionFuture) -> Result<WorkerConnection, String> {
     for _ in 0..POLL_NUM_ATTEMPTS {
